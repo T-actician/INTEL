@@ -127,6 +127,18 @@ $('b-big').addEventListener('click', () => {
   $('b-big').classList.toggle('on', on); $('b-big').textContent = on ? 'COLLAPSE' : 'EXPAND';
   setTimeout(() => map && map.resize(), 50);
 });
+$('c-center').addEventListener('click', () => {
+  const p = shared || tgt; if (!map || !p) return;
+  map.easeTo({ center: [p.lon, p.lat], duration: 900 });
+});
+function holdRotate(id, dir){
+  let raf = null;
+  const step = () => { map.setBearing(map.getBearing() + dir * 1.5); raf = requestAnimationFrame(step); };
+  const stop = () => { if (raf){ cancelAnimationFrame(raf); raf = null; } };
+  $(id).addEventListener('pointerdown', e => { e.preventDefault(); if (map && !raf) step(); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $(id).addEventListener(ev, stop));
+}
+holdRotate('c-left', 1); holdRotate('c-right', -1);
 $('b-exit').addEventListener('click', () => $('b-big').click());
 addEventListener('keydown', e => { if (e.key === 'Escape' && dial.classList.contains('big')) $('b-big').click(); });
 

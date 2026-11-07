@@ -81,6 +81,13 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
 .dial.big .exit{display:block}
 .mid:has(.dial.big) .bar{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:6;
   background:rgba(2,10,18,.7);padding:6px;border:1px solid var(--line-dim);backdrop-filter:blur(4px)}
+.brand{font:600 11px var(--head);letter-spacing:.18em;color:var(--line);opacity:.8;text-shadow:0 0 8px var(--line);text-transform:none}
+.mapctl{display:none;position:absolute;top:112px;right:10px;z-index:3;flex-direction:column;gap:6px}
+.dial.map .mapctl{display:flex}
+.mapctl button{width:29px;height:29px;padding:0;display:grid;place-items:center;background:rgba(2,10,18,.8);border:1px solid var(--line);
+  clip-path:none;box-shadow:0 0 8px rgba(25,181,255,.35);cursor:pointer}
+.mapctl button:hover{background:rgba(25,181,255,.25)}
+.mapctl svg{width:18px;height:18px}
 </style>
 </head>
 <body>
@@ -112,7 +119,11 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
   </div>
 
   <div class="mid">
-    <div class="dial" id="dial"><canvas id="globe"></canvas><div class="cross"></div><div id="map"></div><button id="b-exit" class="exit" aria-label="Exit expanded view">&times; EXIT</button></div>
+    <div class="dial" id="dial"><canvas id="globe"></canvas><div class="cross"></div><div id="map"></div><div class="mapctl" id="mapctl">
+      <button id="c-center" title="Recenter" aria-label="Recenter"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#19b5ff" stroke-width="1.5"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#19b5ff" stroke-width="1.5"/><circle cx="12" cy="12" r="3.6" fill="#19b5ff"/></svg></button>
+      <button id="c-left" title="Rotate left (hold)" aria-label="Rotate left"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.2-5.1M5 4v4.5h4.5" fill="none" stroke="#19b5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button id="c-right" title="Rotate right (hold)" aria-label="Rotate right"><svg viewBox="0 0 24 24" style="transform:scaleX(-1)"><path d="M5 12a7 7 0 1 0 2.2-5.1M5 4v4.5h4.5" fill="none" stroke="#19b5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div><button id="b-exit" class="exit" aria-label="Exit expanded view">&times; EXIT</button></div>
     <div class="bar">
       <button class="mini" id="b-sat" disabled>SATELLITE</button>
       <button class="mini" id="b-tilt" disabled>3D TILT</button>
@@ -132,7 +143,7 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
       <div class="row"><span>IP range</span><span id="range">--</span></div>
     </section>
     <section class="panel share">
-      <h2>SHARED LOCATION (CONSENT)</h2>
+      <h2>SHARED LOCATION</h2>
       <input id="shared" placeholder="Paste INTEL-LOC text or lat, lon" spellcheck="false" aria-label="Shared location">
       <button class="mini" id="b-plot">PLOT</button>
     </section>
@@ -145,7 +156,7 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
   </div>
 </main>
 
-<footer><h2 style="font:600 12px var(--head);letter-spacing:.2em;color:var(--line);margin-bottom:8px">TERMINAL</h2>
+<footer><h2 style="font:600 12px var(--head);letter-spacing:.2em;color:var(--line);margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline">TERMINAL<span class="brand">Tactician°ᵀᴹ</span></h2>
   <div id="log"></div></footer>
 
 <script src="land.js"></script>
