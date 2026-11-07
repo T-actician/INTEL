@@ -32,7 +32,35 @@ function collect(entities, abuse, other) {
 
 async function getJson(url, ms, headers) {
   const res = await fetch(url, { headers, signal: AbortSignal.timeout(ms) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
+}
+
+const RDAP_HEADERS = { Accept: 'application/rdap+json, application/json', 'User-Agent': 'IntelHUD/1.0' };
+
+async function getRdap(ip) {
+  const urls = [
+    `https://rdap.org/ip/${ip}`,
+    `https://rdap.apnic.net/ip/${ip}`,
+    `https://rdap.db.ripe.net/ip/${ip}`,
+    `https://rdap.arin.net/registry/ip/${ip}`,
+    `https://rdap.lacnic.net/rdap/ip/${ip}`,
+    `https://rdap.afrinic.net/rdap/ip/${ip}`,
+  ];
+  return Promise.any(
+    urls.map(async (u) => {
+      const data = await getJson(u, 8000, RDAP_HEADERS);
+      if (!data || !(data.name || data.handle)) throw new Error('empty answer');
+      return data;
+    })
+  );
+}
+
+function errorText(settled) {
+  const e = settled.reason;
+  if (!e) return 'unknown error';
+  if (e.errors) return [...new Set(e.errors.map((x) => x.message))].join(', ');
+  return e.message;
 }
 
 async function lookup(raw) {
@@ -40,10 +68,10 @@ async function lookup(raw) {
   if (!isPublic(ip)) throw new Error('Enter a valid public IP address');
   if (cache.has(ip)) return cache.get(ip);
 
-  const fields = 'status,message,country,regionName,city,lat,lon,isp,org,as,proxy,hosting,mobile';
+  const fields = 'status,message,country,countryCode,regionName,city,lat,lon,isp,org,as,proxy,hosting,mobile';
   const [g, r] = await Promise.allSettled([
     getJson(`http://ip-api.com/json/${ip}?fields=${fields}`, 8000),
-    getJson(`https://rdap.org/ip/${ip}`, 10000, { Accept: 'application/rdap+json' }),
+    getRdap(ip),
   ]);
 
   if (g.status !== 'fulfilled') throw new Error('Geolocation failed: check your internet connection');
@@ -58,13 +86,14 @@ async function lookup(raw) {
     ip,
     geo,
     rdap_ok: !!rdap,
+    rdap_error: rdap ? null : errorText(r),
     network_name: rdap ? rdap.name : null,
     range: rdap ? `${rdap.startAddress} - ${rdap.endAddress}` : null,
-    country_code: rdap ? rdap.country : null,
+    country_code: (rdap && rdap.country) || geo.countryCode || null,
     abuse_contacts: [...abuse].sort(),
     other_contacts: [...other].filter((e) => !abuse.has(e)).sort(),
   };
-  cache.set(ip, result);
+  if (rdap) cache.set(ip, result);
   return result;
 }
 

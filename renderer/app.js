@@ -143,7 +143,7 @@ async function scan(){
     const data = res.data;
     log('Geolocation resolved: ' + data.geo.city + ', ' + data.geo.country);
     log(data.rdap_ok ? 'Network owner: ' + data.network_name + ' / ' + data.geo.as
-                     : 'RDAP registry unavailable, showing geolocation data only', data.rdap_ok ? '' : 'err');
+                     : 'RDAP registry unavailable (' + (data.rdap_error || 'unknown') + '), showing geolocation data only', data.rdap_ok ? '' : 'err');
     log('Abuse contacts found: ' + data.abuse_contacts.length);
     render(data);
     btn.textContent = 'SCAN COMPLETE'; btn.classList.add('ok');
