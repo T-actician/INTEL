@@ -4,6 +4,9 @@ const dial = $('dial');
 let map = null, tgt = null, mkT = null, mkS = null, shared = null;
 const btns = ['b-sat', 'b-tilt', 'b-bld', 'b-street', 'b-big'];
 
+const NAME = ['coalesce', ['get', 'name:latin'], ['get', 'name']];
+const HALO = { 'text-color': '#ffffff', 'text-halo-color': 'rgba(0,0,0,.85)', 'text-halo-width': 1.6 };
+
 const style = {
   version: 8,
   sources: {
@@ -14,15 +17,24 @@ const style = {
     osm: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' },
     area: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
   },
+  glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
   terrain: { source: 'dem', exaggeration: 1.4 },
   layers: [
     { id: 'sat', type: 'raster', source: 'sat' },
     { id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#ff9d2e', 'fill-opacity': 0.08 } },
     { id: 'area-line', type: 'line', source: 'area', paint: { 'line-color': '#ff9d2e', 'line-width': 2, 'line-dasharray': [3, 3] } },
-    { id: 'bld', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 14,
-      paint: { 'fill-extrusion-color': '#19b5ff', 'fill-extrusion-opacity': 0.7,
+    { id: 'bld', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 14, layout: { visibility: 'none' },
+      paint: { 'fill-extrusion-color': '#e8edf0', 'fill-extrusion-opacity': 0.45,
                'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6],
                'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0] } },
+    { id: 'lb-road', type: 'symbol', source: 'osm', 'source-layer': 'transportation_name', minzoom: 14,
+      layout: { 'symbol-placement': 'line', 'text-field': NAME, 'text-font': ['Noto Sans Regular'], 'text-size': 11 }, paint: HALO },
+    { id: 'lb-place', type: 'symbol', source: 'osm', 'source-layer': 'place', minzoom: 6,
+      layout: { 'text-field': NAME, 'text-font': ['Noto Sans Bold'], 'text-size': 14 }, paint: HALO },
+    { id: 'lb-poi', type: 'symbol', source: 'osm', 'source-layer': 'poi', minzoom: 15, filter: ['has', 'name'],
+      layout: { 'text-field': NAME, 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-anchor': 'top', 'text-offset': [0, 0.4] }, paint: HALO },
+    { id: 'lb-num', type: 'symbol', source: 'osm', 'source-layer': 'housenumber', minzoom: 18,
+      layout: { 'text-field': ['get', 'housenumber'], 'text-font': ['Noto Sans Regular'], 'text-size': 10 }, paint: HALO },
   ],
 };
 
