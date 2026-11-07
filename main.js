@@ -39,6 +39,10 @@ async function getJson(url, ms, headers) {
 const RDAP_HEADERS = { Accept: 'application/rdap+json, application/json', 'User-Agent': 'IntelHUD/1.0' };
 
 async function getRdap(ip) {
+  try { return await getRdapOnce(ip); } catch (e) { return getRdapOnce(ip); }
+}
+
+async function getRdapOnce(ip) {
   const urls = [
     `https://rdap.org/ip/${ip}`,
     `https://rdap.apnic.net/ip/${ip}`,
@@ -49,7 +53,7 @@ async function getRdap(ip) {
   ];
   return Promise.any(
     urls.map(async (u) => {
-      const data = await getJson(u, 8000, RDAP_HEADERS);
+      const data = await getJson(u, 20000, RDAP_HEADERS);
       if (!data || !(data.name || data.handle)) throw new Error('empty answer');
       return data;
     })
@@ -108,6 +112,18 @@ ipcMain.handle('lookup', async (_e, ip) => {
 ipcMain.handle('open-external', (_e, url) => {
   const u = String(url || '');
   if (u.startsWith('https://www.google.com/maps/')) shell.openExternal(u);
+});
+
+ipcMain.handle('resolve-link', async (_e, url) => {
+  const u = String(url || '').trim();
+  if (!/^https:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.com\/maps)/i.test(u)) return '';
+  try {
+    const res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(10000),
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36' } });
+    let out = res.url;
+    if (!/[@!]-?\d+\.\d+/.test(out)) { const t = await res.text(); const m = t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || t.match(/\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/); if (m) out += ' @' + m[1] + ',' + m[2]; }
+    return out;
+  } catch { return ''; }
 });
 
 function createWindow() {

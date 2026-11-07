@@ -130,9 +130,23 @@ $('b-big').addEventListener('click', () => {
 $('b-exit').addEventListener('click', () => $('b-big').click());
 addEventListener('keydown', e => { if (e.key === 'Escape' && dial.classList.contains('big')) $('b-big').click(); });
 
-function plot(){
-  const m = $('shared').value.match(/(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)/);
-  const acc = $('shared').value.match(/acc=(\d+)/);
+function parseCoords(t){
+  const m = t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || t.match(/[?&](?:q|ll|query|destination)=(-?\d+\.\d+)(?:,|%2C)(-?\d+\.\d+)/)
+         || t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || t.match(/(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)/);
+  return m;
+}
+
+async function plot(){
+  let text = $('shared').value.trim();
+  const link = text.match(/https:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps)\S+/i);
+  if (link){
+    log('Resolving shared link...');
+    const full = await window.intel.resolveLink(link[0]);
+    if (!full){ log('Could not open the shared link: check internet', 'err'); return; }
+    text = full;
+  }
+  const m = parseCoords(text);
+  const acc = text.match(/acc=(\d+)/);
   if (!m){ log('Shared location: no coordinates found', 'err'); return; }
   const lat = +m[1], lon = +m[2];
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180){ log('Shared location: coordinates out of range', 'err'); return; }
