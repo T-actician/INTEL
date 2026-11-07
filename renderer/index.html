@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src https://server.arcgisonline.com https://s3.amazonaws.com https://tiles.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:">
 <title>INTEL // IP TRACE</title>
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
 <style>
 :root{
   --bg:#02060d; --panel:#04101c; --line:#19b5ff; --line-dim:rgba(25,181,255,.35);
@@ -58,6 +59,21 @@ main{flex:1;display:grid;grid-template-columns:1fr auto 1fr;grid-template-rows:m
 footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel)}
 .note{color:var(--dim);font-size:12px;margin-top:8px}
 @media (prefers-reduced-motion:reduce){.dial::before{animation:none}}
+
+.mid{display:flex;flex-direction:column;align-items:center;gap:14px}
+.dial{width:min(calc(100vh - 330px),40vw)}
+#map{position:absolute;inset:0;border-radius:inherit;overflow:hidden;opacity:0;pointer-events:none;transition:opacity .6s}
+.dial.map #map{opacity:1;pointer-events:auto}
+.dial.map #globe,.dial.map .cross{opacity:0;pointer-events:none}
+.dial.big{position:fixed;inset:76px 14px 14px 14px;width:auto;aspect-ratio:auto;border-radius:6px;z-index:5;background:var(--bg)}
+.dial.big::before{display:none}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.mini{font-size:12px;padding:8px 12px;letter-spacing:.1em}
+.mini.on{background:var(--amber)}
+.mini:disabled{opacity:.4;cursor:not-allowed}
+.pin{width:14px;height:14px;border-radius:50%;background:var(--amber);border:2px solid #fff;box-shadow:0 0 14px var(--amber)}
+.pin.me{background:var(--green);box-shadow:0 0 14px var(--green)}
+.share input{width:100%;background:#020a12;border:1px solid var(--line-dim);color:var(--green);font:14px var(--mono);padding:8px;outline:none;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -88,7 +104,16 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
     </section>
   </div>
 
-  <div class="dial"><canvas id="globe"></canvas><div class="cross"></div></div>
+  <div class="mid">
+    <div class="dial" id="dial"><canvas id="globe"></canvas><div class="cross"></div><div id="map"></div></div>
+    <div class="bar">
+      <button class="mini" id="b-sat" disabled>SATELLITE</button>
+      <button class="mini" id="b-tilt" disabled>3D TILT</button>
+      <button class="mini on" id="b-bld" disabled>BUILDINGS</button>
+      <button class="mini" id="b-street" disabled>STREET VIEW</button>
+      <button class="mini" id="b-big" disabled>EXPAND</button>
+    </div>
+  </div>
 
   <div class="col">
     <section class="panel">
@@ -98,6 +123,11 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
       <div class="row"><span>ASN</span><span id="asn">--</span></div>
       <div class="row"><span>Net name</span><span id="netname">--</span></div>
       <div class="row"><span>IP range</span><span id="range">--</span></div>
+    </section>
+    <section class="panel share">
+      <h2>SHARED LOCATION (CONSENT)</h2>
+      <input id="shared" placeholder="Paste INTEL-LOC text or lat, lon" spellcheck="false" aria-label="Shared location">
+      <button class="mini" id="b-plot">PLOT</button>
     </section>
     <section class="panel">
       <h2>ABUSE CONTACTS</h2>
@@ -112,6 +142,8 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
   <div id="log"></div></footer>
 
 <script src="land.js"></script>
+<script src="vendor/maplibre-gl-csp.js"></script>
 <script src="app.js"></script>
+<script src="map.js"></script>
 </body>
 </html>

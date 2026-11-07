@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const net = require('net');
 const path = require('path');
 
@@ -103,6 +103,11 @@ ipcMain.handle('lookup', async (_e, ip) => {
   } catch (e) {
     return { ok: false, error: e.message };
   }
+});
+
+ipcMain.handle('open-external', (_e, url) => {
+  const u = String(url || '');
+  if (u.startsWith('https://www.google.com/maps/')) shell.openExternal(u);
 });
 
 function createWindow() {
