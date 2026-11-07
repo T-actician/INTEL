@@ -1,0 +1,25 @@
+{
+  "name": "intel-hud",
+  "version": "1.0.0",
+  "description": "IP intelligence HUD",
+  "main": "main.js",
+  "author": "Lion",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.lion.intelhud",
+    "productName": "IntelHUD",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "renderer/**/*", "package.json"],
+    "win": { "target": ["nsis", "portable"] },
+    "nsis": { "artifactName": "${productName}-Setup-${version}.${ext}", "oneClick": false, "allowToChangeInstallationDirectory": true },
+    "portable": { "artifactName": "${productName}-Portable-${version}.${ext}" }
+  }
+}

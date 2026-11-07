@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:">
+<title>INTEL // IP TRACE</title>
+<style>
+:root{
+  --bg:#02060d; --panel:#04101c; --line:#19b5ff; --line-dim:rgba(25,181,255,.35);
+  --amber:#ff9d2e; --green:#2dffb0; --red:#ff4d5e; --text:#9fd8f5; --dim:#4f7f99;
+  --head:Bahnschrift,'Segoe UI',Arial,sans-serif; --mono:Consolas,'Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden}
+body{background:radial-gradient(ellipse at 50% 40%,#06192b 0,var(--bg) 65%);color:var(--text);
+  font:15px/1.5 var(--mono);display:flex;flex-direction:column;padding:14px;gap:12px;overflow-x:hidden}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+header{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border:1px solid var(--line-dim);padding:10px 14px}
+header h1{font:700 18px var(--head);letter-spacing:.2em;color:var(--line);margin-right:auto}
+header input{background:#020a12;border:1px solid var(--line);color:var(--amber);font:18px var(--mono);
+  padding:8px 12px;width:240px;outline:none}
+header input:focus-visible,button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+button{background:var(--line);color:#00131f;border:0;font:700 14px var(--head);letter-spacing:.12em;
+  padding:10px 20px;cursor:pointer;transition:background .15s}
+button:hover{background:#5fd0ff}
+button:disabled{background:var(--dim);cursor:wait}
+button.ok{background:var(--green)}
+main{flex:1;display:grid;grid-template-columns:1fr auto 1fr;grid-template-rows:minmax(0,1fr);gap:14px;align-items:center;min-height:0}
+.col{display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto}
+.panel{position:relative;background:var(--panel);border:1px solid var(--line-dim);padding:14px 16px}
+.panel::before,.panel::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--line)}
+.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.panel h2{font:600 12px var(--head);letter-spacing:.2em;color:var(--line);margin-bottom:10px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px dashed rgba(25,181,255,.12)}
+.row span:first-child{color:var(--dim)}
+.row span:last-child{color:var(--amber);text-align:right;word-break:break-word}
+.big{font:700 26px var(--head);color:var(--amber);letter-spacing:.06em;text-align:center;margin:2px 0 8px}
+.lamps{display:flex;gap:14px;justify-content:space-around}
+.lamp{text-align:center;font-size:13px;color:var(--dim)}
+.lamp i{display:block;width:16px;height:16px;border-radius:50%;margin:0 auto 6px;background:#12303f;border:1px solid var(--dim)}
+.lamp.on-ok i{background:var(--green);box-shadow:0 0 10px var(--green)}
+.lamp.on-warn i{background:var(--red);box-shadow:0 0 10px var(--red)}
+.mail{color:var(--green);word-break:break-all}
+.dial{position:relative;width:min(calc(100vh - 290px),40vw);aspect-ratio:1;border-radius:50%;border:3px solid var(--line);
+  box-shadow:0 0 30px rgba(25,181,255,.35),inset 0 0 30px rgba(25,181,255,.25)}
+.dial::before{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px dashed var(--line-dim);
+  animation:spin 40s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#globe{position:absolute;inset:0;width:100%;height:100%;border-radius:50%}
+.cross{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:linear-gradient(var(--line-dim),var(--line-dim)) center/1px 100% no-repeat,
+             linear-gradient(var(--line-dim),var(--line-dim)) center/100% 1px no-repeat}
+#log{height:96px;overflow:auto;font-size:13px;color:var(--green)}
+#log div{white-space:pre-wrap}
+#log .err{color:var(--red)}
+footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel)}
+.note{color:var(--dim);font-size:12px;margin-top:8px}
+@media (prefers-reduced-motion:reduce){.dial::before{animation:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>INTEL // IP TRACE</h1>
+  <input id="ip" value="103.127.84.101" spellcheck="false" aria-label="IP address">
+  <button id="scan">SCAN</button>
+</header>
+
+<main>
+  <div class="col">
+    <section class="panel">
+      <h2>TARGET</h2>
+      <div class="big" id="t-ip">--</div>
+      <div class="row"><span>Country</span><span id="country">--</span></div>
+      <div class="row"><span>Region</span><span id="region">--</span></div>
+      <div class="row"><span>City / area</span><span id="city">--</span></div>
+      <div class="row"><span>Coordinates</span><span id="coords">--</span></div>
+      <p class="note">Coordinates mark the ISP's service area, not a person or street address.</p>
+    </section>
+    <section class="panel">
+      <h2>ROUTE FLAGS</h2>
+      <div class="lamps">
+        <div class="lamp" id="l-proxy"><i></i>Proxy / VPN</div>
+        <div class="lamp" id="l-hosting"><i></i>Hosting</div>
+        <div class="lamp" id="l-mobile"><i></i>Mobile</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="dial"><canvas id="globe"></canvas><div class="cross"></div></div>
+
+  <div class="col">
+    <section class="panel">
+      <h2>NETWORK</h2>
+      <div class="row"><span>ISP</span><span id="isp">--</span></div>
+      <div class="row"><span>Org</span><span id="org">--</span></div>
+      <div class="row"><span>ASN</span><span id="asn">--</span></div>
+      <div class="row"><span>Net name</span><span id="netname">--</span></div>
+      <div class="row"><span>IP range</span><span id="range">--</span></div>
+    </section>
+    <section class="panel">
+      <h2>ABUSE CONTACTS</h2>
+      <div id="abuse" class="mail">--</div>
+      <h2 style="margin-top:12px">OTHER CONTACTS</h2>
+      <div id="other" class="mail">--</div>
+    </section>
+  </div>
+</main>
+
+<footer><h2 style="font:600 12px var(--head);letter-spacing:.2em;color:var(--line);margin-bottom:8px">TERMINAL</h2>
+  <div id="log"></div></footer>
+
+<script src="land.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
