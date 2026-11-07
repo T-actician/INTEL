@@ -115,6 +115,7 @@ $('b-big').addEventListener('click', () => {
   $('b-big').classList.toggle('on', on); $('b-big').textContent = on ? 'COLLAPSE' : 'EXPAND';
   setTimeout(() => map && map.resize(), 50);
 });
+$('b-exit').addEventListener('click', () => $('b-big').click());
 addEventListener('keydown', e => { if (e.key === 'Escape' && dial.classList.contains('big')) $('b-big').click(); });
 
 function plot(){
@@ -131,5 +132,6 @@ function plot(){
   map.loaded() ? go() : map.once('load', go);
 }
 $('b-plot').addEventListener('click', plot);
-$('shared').addEventListener('keydown', e => { if (e.key === 'Enter') plot(); });
+$('shared').$('b-exit').addEventListener('click', () => $('b-big').click());
+addEventListener('keydown', e => { if (e.key === 'Enter') plot(); });
 })();

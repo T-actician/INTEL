@@ -74,6 +74,13 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
 .pin{width:14px;height:14px;border-radius:50%;background:var(--amber);border:2px solid #fff;box-shadow:0 0 14px var(--amber)}
 .pin.me{background:var(--green);box-shadow:0 0 14px var(--green)}
 .share input{width:100%;background:#020a12;border:1px solid var(--line-dim);color:var(--green);font:14px var(--mono);padding:8px;outline:none;margin-bottom:8px}
+.exit{display:none;position:absolute;top:12px;left:12px;z-index:6;padding:6px 12px;font:700 12px var(--head);letter-spacing:.15em;
+  background:rgba(2,10,18,.75);color:var(--line);border:1px solid var(--line);backdrop-filter:blur(4px);
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);box-shadow:0 0 12px rgba(25,181,255,.4)}
+.exit:hover{background:var(--amber);color:#00131f;border-color:var(--amber)}
+.dial.big .exit{display:block}
+.mid:has(.dial.big) .bar{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:6;
+  background:rgba(2,10,18,.7);padding:6px;border:1px solid var(--line-dim);backdrop-filter:blur(4px)}
 </style>
 </head>
 <body>
@@ -105,7 +112,7 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
   </div>
 
   <div class="mid">
-    <div class="dial" id="dial"><canvas id="globe"></canvas><div class="cross"></div><div id="map"></div></div>
+    <div class="dial" id="dial"><canvas id="globe"></canvas><div class="cross"></div><div id="map"></div><button id="b-exit" class="exit" aria-label="Exit expanded view">&times; EXIT</button></div>
     <div class="bar">
       <button class="mini" id="b-sat" disabled>SATELLITE</button>
       <button class="mini" id="b-tilt" disabled>3D TILT</button>
