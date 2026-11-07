@@ -12,7 +12,7 @@ const style = {
   sources: {
     sat: { type: 'raster', tileSize: 256, maxzoom: 18, attribution: 'Imagery: Esri, Maxar, Earthstar Geographics',
            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'] },
-    dem: { type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
+    dem: { type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 11,
            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'] },
     osm: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' },
     area: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
@@ -20,7 +20,7 @@ const style = {
   glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
   terrain: { source: 'dem', exaggeration: 1.4 },
   layers: [
-    { id: 'sat', type: 'raster', source: 'sat' },
+    { id: 'sat', type: 'raster', source: 'sat', paint: { 'raster-fade-duration': 100 } },
     { id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#ff9d2e', 'fill-opacity': 0.08 } },
     { id: 'area-line', type: 'line', source: 'area', paint: { 'line-color': '#ff9d2e', 'line-width': 2, 'line-dasharray': [3, 3] } },
     { id: 'bld', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 14, layout: { visibility: 'none' },
@@ -55,7 +55,7 @@ function ensureMap(){
   if (map) return true;
   if (!window.maplibregl){ log('Map engine failed to load', 'err'); return false; }
   maplibregl.setWorkerUrl('vendor/maplibre-gl-csp-worker.js');
-  map = new maplibregl.Map({ container: 'map', style, center: [tgt.lon, tgt.lat], zoom: 7, maxPitch: 80, maxZoom: 20,
+  map = new maplibregl.Map({ container: 'map', style, center: [tgt.lon, tgt.lat], zoom: 7, maxPitch: 80, maxZoom: 20, maxTileCacheSize: 600, fadeDuration: 100, renderWorldCopies: false,
                              attributionControl: { compact: true } });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new maplibregl.ScaleControl(), 'bottom-left');
