@@ -1,7 +1,7 @@
 (() => {
 const $ = id => document.getElementById(id);
 const dial = $('dial');
-let map = null, tgt = null, mkT = null, mkS = null, shared = null;
+let mkQ = null, map = null, tgt = null, mkT = null, mkS = null, shared = null;
 const btns = ['b-sat', 'b-tilt', 'b-bld', 'b-street', 'b-big'];
 
 const NAME = ['coalesce', ['get', 'name:latin'], ['get', 'name']];
@@ -100,7 +100,12 @@ function leave(){
 
 window.addEventListener('hud-target', e => {
   tgt = e.detail; btns.forEach(id => { $(id).disabled = false; });
-  if (map){ drawTarget(); }
+  shared = null; if (mkS){ mkS.remove(); mkS = null; }
+  if (mkQ){ mkQ.remove(); mkQ = null; }
+  if (map){
+    drawTarget();
+    if (dial.classList.contains('map')) map.flyTo({ center: [tgt.lon, tgt.lat], zoom: 10.5, pitch: 0, bearing: 0, duration: 2500, essential: true });
+  }
 });
 window.addEventListener('hud-enter-map', enter);
 
@@ -141,6 +146,41 @@ function holdRotate(id, dir){
 holdRotate('c-left', 1); holdRotate('c-right', -1);
 $('b-exit').addEventListener('click', () => $('b-big').click());
 addEventListener('keydown', e => { if (e.key === 'Escape' && dial.classList.contains('big')) $('b-big').click(); });
+
+const qres = $('qres');
+function hideRes(){ qres.style.display = 'none'; qres.textContent = ''; }
+function goPlace(p){
+  hideRes();
+  if (mkQ) mkQ.remove();
+  mkQ = new maplibregl.Marker({ element: pin('srch-pin') }).setLngLat([p.lon, p.lat]).addTo(map);
+  if (p.bbox && p.bbox.length === 4) map.fitBounds([[p.bbox[2], p.bbox[0]], [p.bbox[3], p.bbox[1]]], { padding: 60, maxZoom: 17, duration: 2200 });
+  else map.flyTo({ center: [p.lon, p.lat], zoom: 16, duration: 2200 });
+  log('Search: ' + p.name.split(',').slice(0, 2).join(','));
+}
+async function search(){
+  const q = $('q').value.trim();
+  if (!q || !map) return;
+  const r = await window.intel.geocode(q);
+  qres.textContent = '';
+  if (!r.length){
+    const d = document.createElement('div'); d.className = 'none'; d.textContent = 'No results';
+    qres.appendChild(d); qres.style.display = 'block'; return;
+  }
+  goPlace(r[0]);
+  if (r.length > 1){
+    r.forEach(p => {
+      const d = document.createElement('div'); d.textContent = p.name;
+      d.addEventListener('mousedown', ev => { ev.preventDefault(); goPlace(p); });
+      qres.appendChild(d);
+    });
+    qres.style.display = 'block';
+  }
+}
+$('q').addEventListener('keydown', e => {
+  if (e.key === 'Enter') search();
+  if (e.key === 'Escape'){ e.stopPropagation(); hideRes(); $('q').blur(); }
+});
+$('q').addEventListener('blur', () => setTimeout(hideRes, 150));
 
 function parseCoords(t){
   const m = t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || t.match(/[?&](?:q|ll|query|destination)=(-?\d+\.\d+)(?:,|%2C)(-?\d+\.\d+)/)

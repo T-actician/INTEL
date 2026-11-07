@@ -88,6 +88,17 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
   clip-path:none;box-shadow:0 0 8px rgba(25,181,255,.35);cursor:pointer}
 .mapctl button:hover{background:rgba(25,181,255,.25)}
 .mapctl svg{width:18px;height:18px}
+.srch{display:none;position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:6;width:190px;transition:width .25s}
+.dial.big .srch{display:block}
+.srch:focus-within{width:min(460px,55%)}
+.srch input{width:100%;box-sizing:border-box;height:28px;padding:0 16px;border-radius:999px;background:rgba(2,10,18,.75);border:1px solid var(--line);
+  color:#fff;font:12px var(--mono);outline:none;backdrop-filter:blur(4px);box-shadow:0 0 12px rgba(25,181,255,.3);transition:height .25s,font-size .25s}
+.srch:focus-within input{height:38px;font-size:15px}
+#qres{margin-top:6px;background:rgba(2,10,18,.92);border:1px solid var(--line-dim);border-radius:12px;overflow:hidden;display:none}
+#qres div{padding:8px 14px;font:13px var(--mono);color:#cfeaff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#qres div:hover{background:rgba(25,181,255,.25)}
+#qres .none{color:var(--amber);cursor:default}
+.pin.srch-pin{background:var(--line);box-shadow:0 0 14px var(--line)}
 </style>
 </head>
 <body>
@@ -119,7 +130,8 @@ footer{border:1px solid var(--line-dim);padding:10px 14px;background:var(--panel
   </div>
 
   <div class="mid">
-    <div class="dial" id="dial"><canvas id="globe"></canvas><div class="cross"></div><div id="map"></div><div class="mapctl" id="mapctl">
+    <div class="dial" id="dial"><canvas id="globe"></canvas><div class="cross"></div><div id="map"></div><div class="srch" id="srch"><input id="q" placeholder="Search place" autocomplete="off" spellcheck="false" aria-label="Search place"><div id="qres"></div></div>
+    <div class="mapctl" id="mapctl">
       <button id="c-center" title="Recenter" aria-label="Recenter"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#19b5ff" stroke-width="1.5"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#19b5ff" stroke-width="1.5"/><circle cx="12" cy="12" r="3.6" fill="#19b5ff"/></svg></button>
       <button id="c-left" title="Rotate left (hold)" aria-label="Rotate left"><svg viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.2-5.1M5 4v4.5h4.5" fill="none" stroke="#19b5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <button id="c-right" title="Rotate right (hold)" aria-label="Rotate right"><svg viewBox="0 0 24 24" style="transform:scaleX(-1)"><path d="M5 12a7 7 0 1 0 2.2-5.1M5 4v4.5h4.5" fill="none" stroke="#19b5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>

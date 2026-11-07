@@ -126,6 +126,17 @@ ipcMain.handle('resolve-link', async (_e, url) => {
   } catch { return ''; }
 });
 
+ipcMain.handle('geocode', async (_e, q) => {
+  const t = String(q || '').trim().slice(0, 200);
+  if (!t) return [];
+  try {
+    const res = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=' + encodeURIComponent(t),
+      { headers: { 'User-Agent': 'IntelHUD/1.0 (desktop app)', 'Accept-Language': 'en' }, signal: AbortSignal.timeout(10000) });
+    const j = await res.json();
+    return j.map(x => ({ name: x.display_name, lat: +x.lat, lon: +x.lon, bbox: (x.boundingbox || []).map(Number) }));
+  } catch { return []; }
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,

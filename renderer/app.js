@@ -120,6 +120,12 @@ function mails(id, list){
   list.forEach(m => { const d = document.createElement('div'); d.textContent = m; el.appendChild(d); });
 }
 
+function clearPanels(){
+  ['t-ip','country','region','city','coords','isp','org','asn','netname','range'].forEach(id => setText(id, ''));
+  mails('abuse', []); mails('other', []);
+  ['l-proxy','l-hosting','l-mobile'].forEach(id => lamp(id, false));
+}
+
 function render(r){
   const g = r.geo;
   setText('t-ip', r.ip); setText('country', g.country + ' (' + (r.country_code || '?') + ')');
@@ -138,6 +144,7 @@ async function scan(){
   const btn = $('scan'), ip = $('ip').value.trim();
   btn.disabled = true; btn.classList.remove('ok'); btn.textContent = 'SCANNING...';
   log('Scan started: ' + ip);
+  clearPanels();
   try{
     const res = await window.intel.lookup(ip);
     if (!res.ok) throw new Error(res.error || 'Lookup failed');
