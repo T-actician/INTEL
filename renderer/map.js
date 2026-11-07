@@ -12,13 +12,12 @@ const style = {
   sources: {
     sat: { type: 'raster', tileSize: 256, maxzoom: 18, attribution: 'Imagery: Esri, Maxar, Earthstar Geographics',
            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'] },
-    dem: { type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 11,
+    dem: { type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'] },
     osm: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' },
     area: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
   },
   glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-  terrain: { source: 'dem', exaggeration: 1.4 },
   layers: [
     { id: 'sat', type: 'raster', source: 'sat', paint: { 'raster-fade-duration': 100 } },
     { id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#ff9d2e', 'fill-opacity': 0.08 } },
@@ -51,16 +50,31 @@ function circle(lon, lat, km){
 
 function pin(cls){ const e = document.createElement('div'); e.className = 'pin ' + (cls || ''); return e; }
 
+let terrainOn = false;
+function syncTerrain(){
+  if (!map) return;
+  const want = map.getPitch() > 8;
+  if (want === terrainOn) return;
+  terrainOn = want;
+  map.setTerrain(want ? { source: 'dem', exaggeration: 1.4 } : null);
+}
+
 function ensureMap(){
   if (map) return true;
   if (!window.maplibregl){ log('Map engine failed to load', 'err'); return false; }
   maplibregl.setWorkerUrl('vendor/maplibre-gl-csp-worker.js');
-  map = new maplibregl.Map({ container: 'map', style, center: [tgt.lon, tgt.lat], zoom: 7, maxPitch: 80, maxZoom: 20, maxTileCacheSize: 600, fadeDuration: 100, renderWorldCopies: false,
+  map = new maplibregl.Map({ container: 'map', style, center: [tgt.lon, tgt.lat], zoom: 7, maxPitch: 80, maxZoom: 20, fadeDuration: 100, renderWorldCopies: false,
                              attributionControl: { compact: true } });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new maplibregl.ScaleControl(), 'bottom-left');
-  let warned = false;
-  map.on('error', () => { if (!warned){ warned = true; log('Some map tiles unreachable: check internet', 'err'); } });
+  const seen = new Set();
+  map.on('error', e => {
+    const m = (e && e.error && e.error.message) || 'unknown';
+    if (e && e.sourceId === 'dem'){ map.setTerrain(null); terrainOn = false; }
+    if (seen.size < 3 && !seen.has(m)){ seen.add(m); log('Map: ' + m.slice(0, 90), 'err'); }
+  });
+  map.getCanvas().addEventListener('webglcontextlost', () => log('Map graphics lost, recovering...', 'err'));
+  map.on('pitch', syncTerrain);
   map.on('load', () => { drawTarget(); if (shared) drawShared(); });
   return true;
 }
