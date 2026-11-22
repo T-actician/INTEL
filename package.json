@@ -7,11 +7,11 @@
   "license": "UNLICENSED",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win --publish never"
   },
   "devDependencies": {
     "electron": "^45.2.3",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^25.1.8"
   },
   "build": {
     "appId": "com.lion.intelhud",
@@ -38,6 +38,14 @@
     },
     "portable": {
       "artifactName": "${productName}-Portable-${version}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "T-actician",
+      "repo": "INTEL"
     }
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
   }
 }

@@ -120,12 +120,6 @@ function mails(id, list){
   list.forEach(m => { const d = document.createElement('div'); d.textContent = m; el.appendChild(d); });
 }
 
-function clearPanels(){
-  ['t-ip','country','region','city','coords','isp','org','asn','netname','range'].forEach(id => setText(id, ''));
-  mails('abuse', []); mails('other', []);
-  ['l-proxy','l-hosting','l-mobile'].forEach(id => lamp(id, false));
-}
-
 function render(r){
   const g = r.geo;
   setText('t-ip', r.ip); setText('country', g.country + ' (' + (r.country_code || '?') + ')');
@@ -137,14 +131,12 @@ function render(r){
   lamp('l-proxy', g.proxy, true); lamp('l-hosting', g.hosting, true); lamp('l-mobile', g.mobile, false);
   target = {lon: g.lon, lat: g.lat, label: g.city + ', ' + g.country};
   flyTo(g.lon, g.lat, 4);
-  window.dispatchEvent(new CustomEvent('hud-target', {detail: target}));
 }
 
 async function scan(){
   const btn = $('scan'), ip = $('ip').value.trim();
   btn.disabled = true; btn.classList.remove('ok'); btn.textContent = 'SCANNING...';
   log('Scan started: ' + ip);
-  clearPanels();
   try{
     const res = await window.intel.lookup(ip);
     if (!res.ok) throw new Error(res.error || 'Lookup failed');
@@ -166,22 +158,6 @@ async function scan(){
 }
 $('scan').addEventListener('click', scan);
 $('ip').addEventListener('keydown', e => { if (e.key === 'Enter') scan(); });
-const dial = $('dial');
-let drag = null;
-dial.addEventListener('wheel', e => {
-  if (dial.classList.contains('map')) return;
-  e.preventDefault(); idle = false; anim = null;
-  view.zoom = Math.min(40, Math.max(0.8, view.zoom * Math.exp(-e.deltaY * 0.0015)));
-  if (target && e.deltaY < 0){ view.lon += (target.lon - view.lon) * 0.12; view.lat += (target.lat - view.lat) * 0.12; }
-  if (target && view.zoom >= 12) window.dispatchEvent(new Event('hud-enter-map'));
-}, {passive: false});
-dial.addEventListener('pointerdown', e => { if (!dial.classList.contains('map')){ drag = {x: e.clientX, y: e.clientY}; idle = false; anim = null; } });
-addEventListener('pointerup', () => { drag = null; });
-addEventListener('pointermove', e => {
-  if (!drag) return;
-  const k = 0.25 / Math.max(1, view.zoom);
-  view.lon -= (e.clientX - drag.x) * k; view.lat = Math.max(-85, Math.min(85, view.lat + (e.clientY - drag.y) * k));
-  drag = {x: e.clientX, y: e.clientY};
-});
 size(); requestAnimationFrame(frame);
 log('System online. Enter an IP address and press SCAN.');
+window.intel.onUpdate((msg) => log(msg));

@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const net = require('net');
 const path = require('path');
+const { autoUpdater } = require('electron-updater');
 
 const cache = new Map();
 
@@ -39,10 +40,6 @@ async function getJson(url, ms, headers) {
 const RDAP_HEADERS = { Accept: 'application/rdap+json, application/json', 'User-Agent': 'IntelHUD/1.0' };
 
 async function getRdap(ip) {
-  try { return await getRdapOnce(ip); } catch (e) { return getRdapOnce(ip); }
-}
-
-async function getRdapOnce(ip) {
   const urls = [
     `https://rdap.org/ip/${ip}`,
     `https://rdap.apnic.net/ip/${ip}`,
@@ -53,7 +50,7 @@ async function getRdapOnce(ip) {
   ];
   return Promise.any(
     urls.map(async (u) => {
-      const data = await getJson(u, 20000, RDAP_HEADERS);
+      const data = await getJson(u, 8000, RDAP_HEADERS);
       if (!data || !(data.name || data.handle)) throw new Error('empty answer');
       return data;
     })
@@ -109,33 +106,18 @@ ipcMain.handle('lookup', async (_e, ip) => {
   }
 });
 
-ipcMain.handle('open-external', (_e, url) => {
-  const u = String(url || '');
-  if (u.startsWith('https://www.google.com/maps/')) shell.openExternal(u);
-});
-
-ipcMain.handle('resolve-link', async (_e, url) => {
-  const u = String(url || '').trim();
-  if (!/^https:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.com\/maps)/i.test(u)) return '';
-  try {
-    const res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(10000),
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36' } });
-    let out = res.url;
-    if (!/[@!]-?\d+\.\d+/.test(out)) { const t = await res.text(); const m = t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || t.match(/\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/); if (m) out += ' @' + m[1] + ',' + m[2]; }
-    return out;
-  } catch { return ''; }
-});
-
-ipcMain.handle('geocode', async (_e, q) => {
-  const t = String(q || '').trim().slice(0, 200);
-  if (!t) return [];
-  try {
-    const res = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q=' + encodeURIComponent(t),
-      { headers: { 'User-Agent': 'IntelHUD/1.0 (desktop app)', 'Accept-Language': 'en' }, signal: AbortSignal.timeout(10000) });
-    const j = await res.json();
-    return j.map(x => ({ name: x.display_name, lat: +x.lat, lon: +x.lon, bbox: (x.boundingbox || []).map(Number) }));
-  } catch { return []; }
-});
+function setupUpdater(win) {
+  const send = (msg) => win.webContents.send('update-status', msg);
+  autoUpdater.on('checking-for-update', () => send('Checking for updates...'));
+  autoUpdater.on('update-not-available', () => send('You are on the latest version.'));
+  autoUpdater.on('update-available', (i) => send('Update ' + i.version + ' found, downloading...'));
+  autoUpdater.on('download-progress', (pr) => send('Downloading update: ' + Math.round(pr.percent) + '%'));
+  autoUpdater.on('update-downloaded', (i) => send('Update ' + i.version + ' ready. It installs when you close the app.'));
+  autoUpdater.on('error', (e) => send('Update check failed: ' + (e && e.message ? e.message.split('\n')[0] : 'unknown error')));
+  win.webContents.once('did-finish-load', () => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  });
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -155,6 +137,7 @@ function createWindow() {
   });
   win.setMenuBarVisibility(false);
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  if (app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR) setupUpdater(win);
 }
 
 app.whenReady().then(createWindow);
