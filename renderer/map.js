@@ -1,7 +1,7 @@
 (() => {
 const $ = id => document.getElementById(id);
 const dial = $('dial');
-let mkQ = null, map = null, tgt = null, mkT = null, mkS = null, shared = null;
+let sharedMode = false, mkQ = null, map = null, tgt = null, mkT = null, mkS = null, shared = null;
 const btns = ['b-sat', 'b-tilt', 'b-bld', 'b-street', 'b-big'];
 
 const NAME = ['coalesce', ['get', 'name:latin'], ['get', 'name']];
@@ -12,7 +12,7 @@ const style = {
   sources: {
     sat: { type: 'raster', tileSize: 256, maxzoom: 18, attribution: 'Imagery: Esri, Maxar, Earthstar Geographics',
            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'] },
-    dem: { type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 11,
+    dem: { type: 'raster-dem', encoding: 'terrarium', tileSize: 256, maxzoom: 14,
            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'] },
     osm: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' },
     area: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
@@ -20,7 +20,7 @@ const style = {
   terrain: { source: 'dem', exaggeration: 1.4 },
   glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
   layers: [
-    { id: 'sat', type: 'raster', source: 'sat', paint: { 'raster-fade-duration': 100 } },
+    { id: 'sat', type: 'raster', source: 'sat' },
     { id: 'area-fill', type: 'fill', source: 'area', paint: { 'fill-color': '#ff9d2e', 'fill-opacity': 0.08 } },
     { id: 'area-line', type: 'line', source: 'area', paint: { 'line-color': '#ff9d2e', 'line-width': 2, 'line-dasharray': [3, 3] } },
     { id: 'bld', type: 'fill-extrusion', source: 'osm', 'source-layer': 'building', minzoom: 14, layout: { visibility: 'none' },
@@ -55,7 +55,7 @@ function ensureMap(){
   if (map) return true;
   if (!window.maplibregl){ log('Map engine failed to load', 'err'); return false; }
   maplibregl.setWorkerUrl('vendor/maplibre-gl-csp-worker.js');
-  map = new maplibregl.Map({ container: 'map', style, center: [tgt.lon, tgt.lat], zoom: 7, maxPitch: 80, maxZoom: 20, maxTileCacheSize: 600, fadeDuration: 100, renderWorldCopies: false,
+  map = new maplibregl.Map({ container: 'map', style, center: [tgt.lon, tgt.lat], zoom: 7, maxPitch: 80, maxZoom: 20, renderWorldCopies: false,
                              attributionControl: { compact: true } });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new maplibregl.ScaleControl(), 'bottom-left');
@@ -71,7 +71,7 @@ function ensureMap(){
 }
 
 function drawTarget(){
-  if (!map || !tgt) return;
+  if (!map || !tgt || sharedMode) return;
   map.getSource('area') && map.getSource('area').setData({ type: 'FeatureCollection', features: [circle(tgt.lon, tgt.lat, 30)] });
   if (!mkT) mkT = new maplibregl.Marker({ element: pin() });
   mkT.setLngLat([tgt.lon, tgt.lat]).addTo(map);
@@ -93,7 +93,7 @@ function enter(){
     map.flyTo({ center: [tgt.lon, tgt.lat], zoom: 10.5, duration: 3000, essential: true });
   });
   $('b-sat').textContent = 'GLOBE'; $('b-sat').classList.add('on');
-  log('Satellite view: ISP service area (30 km ring), not a street address');
+  log(sharedMode ? 'Satellite view: shared location' : 'Satellite view: ISP service area (30 km ring), not a street address');
 }
 
 function leave(){
@@ -104,7 +104,7 @@ function leave(){
 }
 
 window.addEventListener('hud-target', e => {
-  tgt = e.detail; btns.forEach(id => { $(id).disabled = false; });
+  sharedMode = false; tgt = e.detail; btns.forEach(id => { $(id).disabled = false; });
   shared = null; if (mkS){ mkS.remove(); mkS = null; }
   if (mkQ){ mkQ.remove(); mkQ = null; }
   if (map){
@@ -209,7 +209,10 @@ async function plot(){
   if (Math.abs(lat) > 90 || Math.abs(lon) > 180){ log('Shared location: coordinates out of range', 'err'); return; }
   shared = { lat, lon };
   log(`Shared location plotted: ${lat.toFixed(5)}, ${lon.toFixed(5)}` + (acc ? ` (±${acc[1]} m)` : ''));
-  if (!tgt) tgt = { lat, lon, label: 'Shared' };
+  sharedMode = true; tgt = { lat, lon, label: 'Shared location' };
+  if (mkT){ mkT.remove(); mkT = null; }
+  if (map && map.getSource('area')) map.getSource('area').setData({ type: 'FeatureCollection', features: [] });
+  target = { lon, lat, label: 'Shared location' }; flyTo(lon, lat, 4);
   clearPanels();
   setText('t-ip', 'SHARED LOCATION'); setText('coords', lat.toFixed(5) + ', ' + lon.toFixed(5));
   document.querySelector('.note').textContent = 'Coordinates come from a shared location, not an IP address.';
