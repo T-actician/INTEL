@@ -1,6 +1,6 @@
 {
   "name": "intel-hud",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "IP intelligence HUD",
   "main": "main.js",
   "author": "Lion",

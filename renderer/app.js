@@ -145,6 +145,7 @@ async function scan(){
   btn.disabled = true; btn.classList.remove('ok'); btn.textContent = 'SCANNING...';
   log('Scan started: ' + ip);
   clearPanels();
+  document.querySelector('.note').textContent = "Coordinates mark the ISP's service area, not a person or street address.";
   try{
     const res = await window.intel.lookup(ip);
     if (!res.ok) throw new Error(res.error || 'Lookup failed');

@@ -5,5 +5,6 @@ contextBridge.exposeInMainWorld('intel', {
   resolveLink: (url) => ipcRenderer.invoke('resolve-link', url),
   geocode: (q) => ipcRenderer.invoke('geocode', q),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  reverseGeocode: (lat, lon) => ipcRenderer.invoke('reverse-geocode', lat, lon),
   onUpdate: (cb) => ipcRenderer.on('update-status', (_e, msg) => cb(msg)),
 });

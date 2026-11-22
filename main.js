@@ -138,6 +138,21 @@ ipcMain.handle('geocode', async (_e, q) => {
   } catch { return []; }
 });
 
+ipcMain.handle('reverse-geocode', async (_e, lat, lon) => {
+  const a = +lat, b = +lon;
+  if (!isFinite(a) || !isFinite(b)) return null;
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&lat=${a}&lon=${b}`,
+      { headers: { 'User-Agent': 'IntelHUD/1.0 (desktop app)', 'Accept-Language': 'en' }, signal: AbortSignal.timeout(10000) });
+    const j = await res.json(), ad = j.address || {};
+    return {
+      country: ad.country ? ad.country + (ad.country_code ? ' (' + ad.country_code.toUpperCase() + ')' : '') : '',
+      region: ad.state || ad.region || ad.county || '',
+      city: ad.suburb || ad.neighbourhood || ad.city || ad.town || ad.village || '',
+    };
+  } catch { return null; }
+});
+
 function setupUpdater(win) {
   const send = (msg) => win.webContents.send('update-status', msg);
   autoUpdater.on('checking-for-update', () => send('Checking for updates...'));

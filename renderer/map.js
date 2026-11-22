@@ -210,11 +210,17 @@ async function plot(){
   shared = { lat, lon };
   log(`Shared location plotted: ${lat.toFixed(5)}, ${lon.toFixed(5)}` + (acc ? ` (±${acc[1]} m)` : ''));
   if (!tgt) tgt = { lat, lon, label: 'Shared' };
+  clearPanels();
+  setText('t-ip', 'SHARED LOCATION'); setText('coords', lat.toFixed(5) + ', ' + lon.toFixed(5));
+  document.querySelector('.note').textContent = 'Coordinates come from a shared location, not an IP address.';
+  window.intel.reverseGeocode(lat, lon).then(a => {
+    if (!a) return;
+    setText('country', a.country); setText('region', a.region); setText('city', a.city);
+  });
   if (!dial.classList.contains('map')){ btns.forEach(id => { $(id).disabled = false; }); enter(); }
   const go = () => { drawShared(); map.flyTo({ center: [lon, lat], zoom: 17, pitch: 55, duration: 2500 }); };
   map.loaded() ? go() : map.once('load', go);
 }
 $('b-plot').addEventListener('click', plot);
-$('shared').$('b-exit').addEventListener('click', () => $('b-big').click());
-addEventListener('keydown', e => { if (e.key === 'Enter') plot(); });
+$('shared').addEventListener('keydown', e => { if (e.key === 'Enter') plot(); });
 })();
